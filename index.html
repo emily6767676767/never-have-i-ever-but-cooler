@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Never Have I Ever: Savage Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Permanent Marker -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        savage: {
+                            red: '#FF2A6D',
+                            cyan: '#05D9E8',
+                            blue: '#005678',
+                            dark: '#01012B',
+                            card: '#0D0C1D',
+                            accent: '#FFC857',
+                            neonGreen: '#00FF66'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif'],
+                        marker: ['Permanent Marker', 'cursive']
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'bounce-short': 'bounceShort 0.5s ease-in-out',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both'
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(255, 42, 109, 0.4)' },
+                            '50%': { boxShadow: '0 0 30px rgba(255, 42, 109, 0.8)' }
+                        },
+                        bounceShort: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050414;
+            color: #ffffff;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        .finger-btn {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .finger-btn:active {
+            transform: scale(0.85);
+        }
+        .finger-up {
+            filter: drop-shadow(0 0 8px #00FF66);
+            color: #00FF66;
+        }
+        .finger-down {
+            color: #334155;
+            opacity: 0.3;
+            transform: translateY(6px) scale(0.9);
+        }
+        .tv-card-glow {
+            box-shadow: 0 0 40px -10px rgba(5, 217, 232, 0.25);
+        }
+        .court-bg {
+            background: radial-gradient(circle at center, #1e1b4b 0%, #03001e 100%);
+        }
+        /* Custom scrollbar for game board */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d0c1d;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col justify-between p-2 md:p-6 bg-slate-950 text-slate-100">
+
+    <!-- TOP HEADER / CONTROL BAR -->
+    <header class="max-w-7xl w-full mx-auto flex flex-wrap justify-between items-center gap-4 bg-slate-900/90 border border-slate-800 p-3 md:p-4 rounded-2xl backdrop-blur-md shadow-2xl z-20">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-savage-red to-savage-accent rounded-xl flex items-center justify-center text-slate-950 text-xl md:text-2xl font-black shadow-lg shadow-savage-red/30">
+                🔥
+            </div>
+            <div>
+                <h1 class="font-display text-xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-savage-red via-savage-cyan to-savage-accent bg-clip-text text-transparent">
+                    NEVER HAVE I EVER <span class="text-savage-red text-xs md:text-sm px-2 py-0.5 rounded-full bg-savage-red/20 border border-savage-red/40 font-mono font-bold uppercase tracking-widest align-middle">Savage Edition</span>
+                </h1>
+                <p class="text-xs text-slate-400 hidden sm:block">Classroom Arena Mode • Designed for Main TV Display</p>
+            </div>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-2 md:gap-3">
+            <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 transition active:scale-95" title="Toggle Sound SFX">
+                <i id="soundIcon" class="fas fa-volume-high text-savage-cyan"></i>
+                <span class="hidden md:inline">SFX</span>
+            </button>
+            <button onclick="openRulesModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 text-savage-accent transition active:scale-95">
+                <i class="fas fa-gavel"></i>
+                <span>Rules</span>
+            </button>
+            <button onclick="openAddPromptModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 text-savage-cyan transition active:scale-95">
+                <i class="fas fa-plus"></i>
+                <span class="hidden md:inline">Add Prompt</span>
+            </button>
+            <button onclick="resetEntireGame()" class="px-3 py-2 bg-savage-red/20 hover:bg-savage-red/30 text-savage-red border border-savage-red/40 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 transition active:scale-95">
+                <i class="fas fa-rotate-right"></i>
+                <span class="hidden sm:inline">Reset Game</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN BOARD / CLASSROOM DISPLAY SCREEN -->
+    <main class="max-w-7xl w-full mx-auto my-4 flex-1 flex flex-col justify-center items-center">
+        
+        <!-- MAIN TV PROMPT STAGE -->
+        <div class="w-full bg-slate-900/80 border-2 border-savage-cyan/40 rounded-3xl p-6 md:p-10 relative tv-card-glow backdrop-blur-xl flex flex-col items-center justify-between min-h-[280px] md:min-h-[360px] text-center transition-all duration-300">
+            
+            <!-- Stage Top Status -->
+            <div class="w-full flex justify-between items-center text-xs md:text-sm text-slate-400 border-b border-slate-800/80 pb-3 font-mono">
+                <span class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-savage-neonGreen animate-ping"></span>
+                    <span class="text-savage-neonGreen font-bold">PROMPT <span id="promptIndexDisplay">1</span>/<span id="totalPromptsDisplay">10</span></span>
+                </span>
+                <span id="promptCategoryBadge" class="bg-savage-cyan/10 text-savage-cyan border border-savage-cyan/30 px-3 py-1 rounded-full uppercase tracking-wider font-bold text-xs">
+                    CLASSROOM SAVAGE
+                </span>
+            </div>
+
+            <!-- Prompts Display Box -->
+            <div id="promptContainer" class="my-6 px-4 py-2 transition-all duration-300 transform">
+                <p class="text-slate-400 uppercase tracking-widest text-xs md:text-sm font-bold mb-2">Never Have I Ever...</p>
+                <h2 id="currentPromptText" class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black font-display text-white tracking-tight leading-tight drop-shadow-lg max-w-4xl mx-auto">
+                    Loading prompts...
+                </h2>
+            </div>
+
+            <!-- Prompt Nav & Controls -->
+            <div class="w-full flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800/80">
+                <button onclick="prevPrompt()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-sm flex items-center gap-2 transition active:scale-95">
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="shufflePrompts()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-savage-accent border border-savage-accent/30 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition active:scale-95" title="Shuffle Deck">
+                        <i class="fas fa-shuffle"></i> <span class="hidden sm:inline">Shuffle</span>
+                    </button>
+                    <button onclick="triggerSavageAlert()" class="px-3 py-2 bg-savage-red/20 hover:bg-savage-red/30 text-savage-red border border-savage-red/40 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition active:scale-95" title="Savage Alarm Sound">
+                        🚨 <span class="hidden sm:inline">Savage Callout</span>
+                    </button>
+                </div>
+
+                <button onclick="nextPrompt()" class="px-6 py-2.5 bg-gradient-to-r from-savage-cyan to-blue-600 hover:from-savage-cyan/90 hover:to-blue-500 text-slate-950 font-black rounded-xl text-sm md:text-base flex items-center gap-2 shadow-lg shadow-savage-cyan/20 transition active:scale-95">
+                    Next Prompt <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- QUICK INSTRUCTION BANNER -->
+        <div class="w-full my-4 bg-slate-900/60 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-slate-300">
+            <div class="flex items-center gap-2">
+                <span class="text-savage-accent text-lg">💡</span>
+                <span><strong>How to play:</strong> Each group nominates 1 active player holding 10 fingers. If you've done the prompt, put <strong>1 finger down</strong>!</span>
+            </div>
+            <span class="text-slate-500 italic">Reach 0 fingers? Trigger REVIVAL!</span>
+        </div>
+
+        <!-- 4 TEAMS GRID DISPLAY -->
+        <div id="teamsGrid" class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            <!-- Team cards dynamically populated via JS -->
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="max-w-7xl w-full mx-auto mt-4 text-center text-slate-500 text-xs py-2 border-t border-slate-900 flex justify-between items-center">
+        <span>Never Have I Ever: Savage Edition • Teacher Judge: <strong>Mr. Joy Court</strong></span>
+        <span>Made for classroom TV & interactive whiteboards</span>
+    </footer>
+
+
+    <!-- ================= MODALS & OVERLAYS ================= -->
+
+    <!-- 1. REVIVAL PHASE CHOICE MODAL -->
+    <div id="revivalChoiceModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-savage-red rounded-3xl max-w-2xl w-full p-6 md:p-8 text-center shadow-2xl relative animate-pulse-glow">
+            
+            <div class="inline-block px-4 py-1 bg-savage-red/20 border border-savage-red text-savage-red rounded-full text-xs font-mono font-bold tracking-widest uppercase mb-3">
+                ⚠️ REVIVAL PHASE TRIGGERED
+            </div>
+            
+            <h2 class="text-3xl md:text-5xl font-black font-display text-white mb-2">
+                <span id="revivalTeamNameDisplay" class="text-savage-red">TEAM 1</span> IS OUT OF FINGERS!
+            </h2>
+            <p class="text-slate-300 text-sm md:text-base mb-6">
+                You have reached <strong>0 fingers</strong>! Choose your team's high-stakes revival pathway now, or accept immediate elimination!
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
+                
+                <!-- CHOICE A: PAPER BASKETBALL -->
+                <div class="bg-slate-800/80 border border-savage-cyan/40 hover:border-savage-cyan rounded-2xl p-5 flex flex-col justify-between items-center text-center transition group hover:bg-slate-800">
+                    <div>
+                        <div class="w-14 h-14 bg-savage-cyan/10 rounded-2xl flex items-center justify-center text-3xl mb-3 text-savage-cyan group-hover:scale-110 transition">
+                            🗑️
+                        </div>
+                        <h3 class="font-bold text-xl text-white mb-1">Option A: Paper Ball Throw</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                            Nominate <strong>ANY player</strong> to shoot paper balls into the bin from the back of the room! Each goal = <strong>+1 Finger</strong>. Miss a throw = <strong>LOSE ALL GAINS</strong>!
+                        </p>
+                    </div>
+                    <button onclick="startPaperBasketballGame()" class="w-full py-3 bg-savage-cyan text-slate-950 font-black rounded-xl hover:bg-savage-cyan/90 transition shadow-lg shadow-savage-cyan/20 active:scale-95">
+                        <i class="fas fa-basketball"></i> Attempt Throw
+                    </button>
+                </div>
+
+                <!-- CHOICE B: CALL OUT / SNITCH -->
+                <div class="bg-slate-800/80 border border-savage-accent/40 hover:border-savage-accent rounded-2xl p-5 flex flex-col justify-between items-center text-center transition group hover:bg-slate-800">
+                    <div>
+                        <div class="w-14 h-14 bg-savage-accent/10 rounded-2xl flex items-center justify-center text-3xl mb-3 text-savage-accent group-hover:scale-110 transition">
+                            ⚖️
+                        </div>
+                        <h3 class="font-bold text-xl text-white mb-1">Option B: Snitch & Call Out</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                            Accuse someone from another team who lied on a prompt! Judge Mr. Joy decides. <strong>TRUE:</strong> You get <strong>5 fingers</strong> & they lose 3! <strong>FALSE:</strong> You are OUT!
+                        </p>
+                    </div>
+                    <button onclick="startSnitchCourt()" class="w-full py-3 bg-savage-accent text-slate-950 font-black rounded-xl hover:bg-savage-accent/90 transition shadow-lg shadow-savage-accent/20 active:scale-95">
+                        <i class="fas fa-gavel"></i> Take to Court
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- FORFEIT BUTTON -->
+            <button onclick="forfeitRevival()" class="text-xs text-slate-500 hover:text-savage-red underline transition">
+                Accept Elimination (Forfeit Revival)
+            </button>
+        </div>
+    </div>
+
+
+    <!-- 2. MINI-GAME: PAPER BASKETBALL (OPTION A) -->
+    <div id="paperBallModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-slate-900 border-2 border-savage-cyan rounded-3xl max-w-3xl w-full p-4 md:p-6 text-center shadow-2xl relative flex flex-col items-center">
+            
+            <div class="w-full flex justify-between items-center border-b border-slate-800 pb-3 mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🗑️</span>
+                    <h3 class="font-display font-black text-xl md:text-2xl text-savage-cyan">PAPER BALL CLUTCH THROW</h3>
+                </div>
+                <div class="bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
+                    <span class="text-xs text-slate-400">Current Goals: </span>
+                    <span id="paperBallGoalCount" class="font-mono font-bold text-lg text-savage-neonGreen">0</span>
+                    <span class="text-xs text-slate-400"> (+<span id="paperBallFingersEarned">0</span> fingers)</span>
+                </div>
+            </div>
+
+            <p class="text-xs md:text-sm text-slate-300 mb-3">
+                Click & drag paper ball to aim & release trajectory, OR use the <strong>THROW POWER</strong> button! Cash out anytime to save fingers. If you throw & MISS, all goals are wiped out!
+            </p>
+
+            <!-- GAME CANVAS -->
+            <div class="relative w-full max-w-2xl h-[260px] md:h-[320px] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden my-2 flex items-center justify-center">
+                <canvas id="basketballCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+                
+                <!-- Overlay Message -->
+                <div id="paperBallOverlayMsg" class="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center p-4 text-center hidden">
+                    <h4 id="paperBallOverlayTitle" class="text-2xl md:text-4xl font-black mb-2">SWISH!</h4>
+                    <p id="paperBallOverlayBody" class="text-sm text-slate-300 mb-4">Goal Scored!</p>
+                    <button id="paperBallOverlayBtn" onclick="resetBallPosition()" class="px-6 py-2 bg-savage-cyan text-slate-950 font-bold rounded-xl shadow-lg">
+                        Next Throw
+                    </button>
+                </div>
+            </div>
+
+            <!-- THROW CONTROLS & CASH OUT -->
+            <div class="w-full max-w-2xl flex flex-wrap items-center justify-between gap-3 mt-2">
+                <div class="flex items-center gap-2">
+                    <button onclick="autoShootPaperBall()" id="shootBallBtn" class="px-5 py-2.5 bg-gradient-to-r from-savage-cyan to-blue-600 text-slate-950 font-extrabold rounded-xl text-sm shadow-md active:scale-95">
+                        🎯 Shoot Paper Ball!
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="cashOutBtn" onclick="cashOutPaperBall()" disabled class="px-6 py-2.5 bg-savage-neonGreen/20 border border-savage-neonGreen/50 text-savage-neonGreen font-black rounded-xl text-sm opacity-50 cursor-not-allowed hover:bg-savage-neonGreen/30 transition active:scale-95">
+                        💰 Cash Out (<span id="cashOutFingerCount">0</span> Fingers)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- 3. COURT / SNITCH MODAL (OPTION B) -->
+    <div id="snitchCourtModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="court-bg border-2 border-savage-accent rounded-3xl max-w-2xl w-full p-6 md:p-8 text-center shadow-2xl relative">
+            
+            <div class="w-16 h-16 bg-savage-accent/20 border border-savage-accent text-savage-accent rounded-2xl mx-auto flex items-center justify-center text-3xl mb-3 shadow-lg">
+                ⚖️
+            </div>
+
+            <h2 class="text-3xl md:text-4xl font-black font-display text-white mb-1">TEACHER COURT</h2>
+            <p class="text-savage-accent font-mono text-xs uppercase tracking-widest mb-4">Presiding Judge: Mr. Joy</p>
+
+            <p class="text-slate-300 text-sm mb-6">
+                <strong id="snitchingTeamTitle" class="text-savage-cyan">TEAM 1</strong> is calling out a player from another team for lying on a prompt!
+            </p>
+
+            <!-- FORM: WHO LIES? -->
+            <div class="space-y-4 text-left max-w-md mx-auto bg-slate-900/80 p-4 border border-slate-800 rounded-2xl mb-6">
+                <div>
+                    <label class="block text-xs text-slate-400 font-bold uppercase mb-1">Accused Opponent Team:</label>
+                    <select id="accusedTeamSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm font-semibold text-white focus:outline-none focus:border-savage-accent">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 font-bold uppercase mb-1">Accused Player Name / Description:</label>
+                    <input type="text" id="accusedPlayerNameInput" placeholder="e.g. Alex who didn't drop finger on Minecraft" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-savage-accent">
+                </div>
+            </div>
+
+            <!-- TEACHER VERDICT BUTTONS -->
+            <div class="border-t border-slate-800 pt-4">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Mr. Joy's Official Verdict:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button onclick="judgeVerdict(true)" class="py-3 bg-savage-neonGreen/20 hover:bg-savage-neonGreen/30 border border-savage-neonGreen text-savage-neonGreen font-black rounded-xl text-sm transition flex items-center justify-center gap-2 active:scale-95">
+                        <i class="fas fa-check-circle"></i> PROVEN GUILTY! (Snitch True)
+                    </button>
+                    <button onclick="judgeVerdict(false)" class="py-3 bg-savage-red/20 hover:bg-savage-red/30 border border-savage-red text-savage-red font-black rounded-xl text-sm transition flex items-center justify-center gap-2 active:scale-95">
+                        <i class="fas fa-times-circle"></i> NOT GUILTY! (Snitch Failed)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- 4. ADD CUSTOM PROMPT MODAL -->
+    <div id="addPromptModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 text-center shadow-2xl relative">
+            <button onclick="closeAddPromptModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fas fa-xmark text-xl"></i>
+            </button>
+            <h3 class="font-display font-black text-2xl text-white mb-2">Add Savage Prompt</h3>
+            <p class="text-xs text-slate-400 mb-4">Add your own prompt to the main TV presentation deck live!</p>
+
+            <textarea id="customPromptInput" rows="3" placeholder="Never Have I Ever..." class="w-full bg-slate-950 border border-slate-700 rounded-2xl p-3 text-sm text-white focus:outline-none focus:border-savage-cyan mb-4 resize-none"></textarea>
+
+            <div class="flex gap-2">
+                <button onclick="closeAddPromptModal()" class="w-1/2 py-2.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-sm">Cancel</button>
+                <button onclick="saveCustomPrompt()" class="w-1/2 py-2.5 bg-savage-cyan text-slate-950 font-black rounded-xl text-sm shadow-lg shadow-savage-cyan/20">Add Prompt</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 5. RULES & CHEAT SHEET MODAL -->
+    <div id="rulesModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-6 md:p-8 text-left shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeRulesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fas fa-xmark text-xl"></i>
+            </button>
+            
+            <h3 class="font-display font-black text-3xl text-savage-accent mb-4 flex items-center gap-2">
+                📜 Rules & Gameplay
+            </h3>
+
+            <div class="space-y-4 text-slate-300 text-sm leading-relaxed">
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <h4 class="font-bold text-savage-cyan mb-1">1. Setup & Starting</h4>
+                    <p>4 Groups set up in the class. Each group nominates 1 active player holding 10 fingers up on display.</p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <h4 class="font-bold text-savage-cyan mb-1">2. Prompts & Finger Drops</h4>
+                    <p>Read prompts off the main TV board. If the representative or group members have done the action, put <strong>1 finger down</strong>!</p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <h4 class="font-bold text-savage-red mb-1">3. The Revival Phase (0 Fingers)</h4>
+                    <p>When a team runs out of fingers, they enter REVIVAL immediately and must choose one option:</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1 text-xs">
+                        <li><strong>Option A (Paper Basketball):</strong> Nominate anyone in the room to throw paper balls into the classroom bin from the back! Each goal = <strong>+1 Finger</strong>. You can cash out safely, BUT if you throw again and MISS after making goals, you lose all goals from that turn!</li>
+                        <li><strong>Option B (Snitch / Call Out):</strong> Accuse an opponent player of lying about a prompt! Teacher Mr. Joy renders the verdict.
+                            <br>• <em>Snitch Proven TRUE:</em> Accusing team gets <strong>5 fingers restored</strong>, Lying team loses <strong>3 fingers</strong> immediately!
+                            <br>• <em>Snitch FAILS:</em> Accusing team is OUT!</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <h4 class="font-bold text-savage-neonGreen mb-1">4. Winning the Game</h4>
+                    <p>If both revival options fail or are forfeited, the team is eliminated. The last remaining group wins!</p>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <button onclick="closeRulesModal()" class="px-8 py-2.5 bg-savage-accent text-slate-950 font-black rounded-xl">Got It!</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT GAME LOGIC -->
+    <script>
+        /* ================= GAME STATE ================= */
+        const DEFAULT_PROMPTS = [
+            "Dyed my hair",
+            "Have a pet cat",
+            "Play a sport competitively",
+            "Played Minecraft",
+            "Stacked on someone",
+            "Go to the bathroom every lesson",
+            "Forget you have friends",
+            "Cheated in a test",
+            "Said something bad about Mr. Joy",
+            "Accidentally called a teacher 'Mom' or 'Dad'",
+            "Fell asleep in class",
+            "Laughed at a joke I didn't understand at all",
+            "Eaten food off the floor after the 5-second rule",
+            "Blamed a weird noise or smell on my chair",
+            "Faked being sick to skip PE or school",
+            "Wore my clothes inside out all day without realizing",
+            "Dropped my phone directly on my face while lying in bed",
+            "Sent a message to the wrong group chat and panicked",
+            "Pretended to take notes while actually drawing doodles",
+            "Left my mic on in an online meeting / class",
+            "Tripped up the stairs in front of a big crowd",
+            "Waved back at someone who wasn't waving at me",
+            "Forgot someone's name 2 seconds after they said it",
+            "Looked everywhere for my phone while holding it in my hand"
+        ];
+
+        let prompts = [...DEFAULT_PROMPTS];
+        let currentPromptIndex = 0;
+
+        let teams = [
+            { id: 1, name: "Team 1", player: "Player 1", fingers: 10, maxFingers: 10, eliminated: false, revivalsUsed: 0 },
+            { id: 2, name: "Team 2", player: "Player 2", fingers: 10, maxFingers: 10, eliminated: false, revivalsUsed: 0 },
+            { id: 3, name: "Team 3", player: "Player 3", fingers: 10, maxFingers: 10, eliminated: false, revivalsUsed: 0 },
+            { id: 4, name: "Team 4", player: "Player 4", fingers: 10, maxFingers: 10, eliminated: false, revivalsUsed: 0 }
+        ];
+
+        let activeRevivalTeamId = null;
+        let paperBallGoals = 0;
+        let soundEnabled = true;
+
+        /* ================= WEB AUDIO API SFX SYNTHESIZER ================= */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                icon.className = 'fas fa-volume-high text-savage-cyan';
+            } else {
+                icon.className = 'fas fa-volume-xmark text-slate-500';
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                if (type === 'click') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'fingerDown') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'swish') {
+                    // White noise burst for net swish
+                    const bufferSize = ctx.sampleRate * 0.2;
+                    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                    const output = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                    const whiteNoise = ctx.createBufferSource();
+                    whiteNoise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(1000, now);
+                    filter.frequency.linearRampToValueAtTime(400, now + 0.2);
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    whiteNoise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    whiteNoise.start(now);
+                } else if (type === 'buzzer') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(130, now);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'gavel') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(80, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+                    gain.gain.setValueAtTime(0.6, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'win') {
+                    [261.63, 329.63, 392.00, 523.25].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        gain.gain.setValueAtTime(0.3, now + idx * 0.1);
+                        gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.1);
+                        osc.stop(now + idx * 0.1 + 0.3);
+                    });
+                } else if (type === 'savage') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.linearRampToValueAtTime(880, now + 0.3);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                }
+            } catch (e) {
+                console.log("Audio play error", e);
+            }
+        }
+
+        /* ================= INITIALIZATION & RENDER ================= */
+        window.onload = function() {
+            renderPrompts();
+            renderTeams();
+            initPaperBasketballCanvas();
+        };
+
+        function renderPrompts() {
+            const promptText = document.getElementById('currentPromptText');
+            const promptIndex = document.getElementById('promptIndexDisplay');
+            const totalPrompts = document.getElementById('totalPromptsDisplay');
+
+            promptText.textContent = `"${prompts[currentPromptIndex]}"`;
+            promptIndex.textContent = currentPromptIndex + 1;
+            totalPrompts.textContent = prompts.length;
+
+            // Animate card highlight
+            const container = document.getElementById('promptContainer');
+            container.classList.remove('animate-bounce-short');
+            void container.offsetWidth; // trigger reflow
+            container.classList.add('animate-bounce-short');
+        }
+
+        function nextPrompt() {
+            playSound('click');
+            if (currentPromptIndex < prompts.length - 1) {
+                currentPromptIndex++;
+            } else {
+                currentPromptIndex = 0; // Loop back
+            }
+            renderPrompts();
+        }
+
+        function prevPrompt() {
+            playSound('click');
+            if (currentPromptIndex > 0) {
+                currentPromptIndex--;
+            } else {
+                currentPromptIndex = prompts.length - 1;
+            }
+            renderPrompts();
+        }
+
+        function shufflePrompts() {
+            playSound('click');
+            for (let i = prompts.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [prompts[i], prompts[j]] = [prompts[j], prompts[i]];
+            }
+            currentPromptIndex = 0;
+            renderPrompts();
+        }
+
+        function triggerSavageAlert() {
+            playSound('savage');
+            const container = document.getElementById('promptContainer');
+            container.classList.add('animate-shake');
+            setTimeout(() => {
+                container.classList.remove('animate-shake');
+            }, 600);
+        }
+
+        /* ================= TEAMS & FINGER LOGIC ================= */
+        function renderTeams() {
+            const grid = document.getElementById('teamsGrid');
+            grid.innerHTML = '';
+
+            teams.forEach(team => {
+                const isEliminated = team.eliminated || team.fingers <= 0;
+                const borderStyle = team.eliminated ? 'border-red-900/50 bg-red-950/10 opacity-70' :
+                                    team.fingers === 0 ? 'border-savage-red bg-savage-red/10 animate-pulse-glow' :
+                                    'border-slate-800 bg-slate-900/90 hover:border-slate-700';
+
+                let fingersHTML = '';
+                for (let i = 1; i <= 10; i++) {
+                    const isUp = i <= team.fingers;
+                    fingersHTML += `
+                        <button onclick="toggleSingleFinger(${team.id}, ${i})" 
+                                title="Finger ${i}"
+                                class="finger-btn text-xl md:text-2xl p-1 font-bold ${isUp ? 'finger-up' : 'finger-down'} focus:outline-none">
+                            🖐️
+                        </button>
+                    `;
+                }
+
+                const cardHTML = `
+                    <div class="rounded-3xl border-2 p-4 flex flex-col justify-between transition-all duration-300 relative overflow-hidden ${borderStyle}">
+                        
+                        <!-- Header & Name Input -->
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="w-full mr-2">
+                                <input type="text" value="${team.name}" onchange="updateTeamName(${team.id}, this.value)" 
+                                       class="bg-transparent font-display font-extrabold text-lg md:text-xl text-white focus:outline-none focus:bg-slate-800/80 px-2 py-0.5 rounded-lg w-full">
+                                <input type="text" value="${team.player}" onchange="updateTeamPlayer(${team.id}, this.value)" 
+                                       placeholder="Rep Name" class="bg-transparent text-xs text-savage-cyan font-mono px-2 w-full focus:outline-none">
+                            </div>
+
+                            <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold ${team.eliminated ? 'bg-red-900/40 text-red-400 border border-red-800' : 'bg-savage-cyan/10 text-savage-cyan border border-savage-cyan/30'}">
+                                ${team.eliminated ? 'OUT' : team.fingers + '/10'}
+                            </span>
+                        </div>
+
+                        <!-- 10 Visual Fingers Display -->
+                        <div class="my-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800/80 flex flex-wrap justify-center gap-1">
+                            ${fingersHTML}
+                        </div>
+
+                        <!-- Quick Controls -->
+                        <div class="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-800/80">
+                            <div class="flex items-center gap-1">
+                                <button onclick="adjustFingers(${team.id}, -1)" ${team.eliminated ? 'disabled' : ''} class="w-8 h-8 rounded-xl bg-savage-red/20 text-savage-red border border-savage-red/40 hover:bg-savage-red/40 font-black flex items-center justify-center transition active:scale-95 disabled:opacity-30">
+                                    -1
+                                </button>
+                                <button onclick="adjustFingers(${team.id}, 1)" ${team.eliminated ? 'disabled' : ''} class="w-8 h-8 rounded-xl bg-savage-neonGreen/20 text-savage-neonGreen border border-savage-neonGreen/40 hover:bg-savage-neonGreen/40 font-black flex items-center justify-center transition active:scale-95 disabled:opacity-30">
+                                    +1
+                                </button>
+                            </div>
+
+                            ${team.fingers === 0 && !team.eliminated ? `
+                                <button onclick="openRevivalChoice(${team.id})" class="px-3 py-1.5 bg-savage-red text-white text-xs font-black rounded-xl shadow-lg shadow-savage-red/30 animate-bounce">
+                                    REVIVAL! 🚨
+                                </button>
+                            ` : ''}
+
+                            ${team.eliminated ? `
+                                <button onclick="reviveTeamManual(${team.id})" class="text-xs text-slate-500 hover:text-savage-cyan underline">
+                                    Undo Out
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += cardHTML;
+            });
+
+            checkWinnerCondition();
+        }
+
+        function updateTeamName(id, val) {
+            const team = teams.find(t => t.id === id);
+            if (team) team.name = val;
+        }
+
+        function updateTeamPlayer(id, val) {
+            const team = teams.find(t => t.id === id);
+            if (team) team.player = val;
+        }
+
+        function adjustFingers(teamId, delta) {
+            const team = teams.find(t => t.id === teamId);
+            if (!team || team.eliminated) return;
+
+            if (delta < 0) {
+                playSound('fingerDown');
+            } else {
+                playSound('click');
+            }
+
+            team.fingers = Math.max(0, Math.min(10, team.fingers + delta));
+            renderTeams();
+
+            if (team.fingers === 0 && !team.eliminated) {
+                openRevivalChoice(team.id);
+            }
+        }
+
+        function toggleSingleFinger(teamId, fingerNum) {
+            const team = teams.find(t => t.id === teamId);
+            if (!team || team.eliminated) return;
+
+            if (fingerNum <= team.fingers) {
+                // Lower finger
+                team.fingers = fingerNum - 1;
+                playSound('fingerDown');
+            } else {
+                // Raise finger
+                team.fingers = fingerNum;
+                playSound('click');
+            }
+
+            renderTeams();
+
+            if (team.fingers === 0 && !team.eliminated) {
+                openRevivalChoice(team.id);
+            }
+        }
+
+        function reviveTeamManual(teamId) {
+            const team = teams.find(t => t.id === teamId);
+            if (team) {
+                team.eliminated = false;
+                team.fingers = 5;
+                renderTeams();
+            }
+        }
+
+        function checkWinnerCondition() {
+            const activeTeams = teams.filter(t => !t.eliminated);
+            if (activeTeams.length === 1 && teams.length > 1) {
+                // Winner celebration!
+                playSound('win');
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+
+        /* ================= REVIVAL PHASE SYSTEM ================= */
+        function openRevivalChoice(teamId) {
+            activeRevivalTeamId = teamId;
+            const team = teams.find(t => t.id === teamId);
+            document.getElementById('revivalTeamNameDisplay').textContent = team.name.toUpperCase();
+            document.getElementById('revivalChoiceModal').classList.remove('hidden');
+            playSound('savage');
+        }
+
+        function closeRevivalChoice() {
+            document.getElementById('revivalChoiceModal').classList.add('hidden');
+        }
+
+        function forfeitRevival() {
+            if (!activeRevivalTeamId) return;
+            const team = teams.find(t => t.id === activeRevivalTeamId);
+            if (team) {
+                team.eliminated = true;
+                team.fingers = 0;
+            }
+            closeRevivalChoice();
+            renderTeams();
+            playSound('buzzer');
+        }
+
+
+        /* ================= OPTION A: PAPER BASKETBALL MINI-GAME ================= */
+        let canvas, ctx;
+        let ball = { x: 80, y: 200, vx: 0, vy: 0, radius: 14, isFlying: false, inBin: false };
+        let bin = { x: 500, y: 170, width: 60, height: 75 };
+        let gravity = 0.35;
+        let isAiming = false;
+        let aimStart = { x: 0, y: 0 };
+        let aimCurrent = { x: 0, y: 0 };
+
+        function startPaperBasketballGame() {
+            closeRevivalChoice();
+            paperBallGoals = 0;
+            updatePaperBallUI();
+            document.getElementById('paperBallModal').classList.remove('hidden');
+            resetBallPosition();
+        }
+
+        function initPaperBasketballCanvas() {
+            canvas = document.getElementById('basketballCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Set dynamic canvas size
+            canvas.width = 640;
+            canvas.height = 300;
+
+            // Mouse & Touch events for paper ball throwing
+            canvas.addEventListener('mousedown', onPointerDown);
+            canvas.addEventListener('mousemove', onPointerMove);
+            canvas.addEventListener('mouseup', onPointerUp);
+
+            canvas.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+            });
+            canvas.addEventListener('touchmove', (e) => {
+                const touch = e.touches[0];
+                onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+            });
+            canvas.addEventListener('touchend', onPointerUp);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function getCanvasPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function onPointerDown(e) {
+            if (ball.isFlying) return;
+            const pos = getCanvasPos(e);
+            // Check if clicking near ball
+            const dist = Math.hypot(pos.x - ball.x, pos.y - ball.y);
+            if (dist < 40) {
+                isAiming = true;
+                aimStart = pos;
+                aimCurrent = pos;
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!isAiming) return;
+            aimCurrent = getCanvasPos(e);
+        }
+
+        function onPointerUp() {
+            if (!isAiming) return;
+            isAiming = false;
+
+            // Calculate launch velocity from drag vector
+            const dx = aimStart.x - aimCurrent.x;
+            const dy = aimStart.y - aimCurrent.y;
+
+            if (Math.hypot(dx, dy) > 15) {
+                ball.vx = dx * 0.18;
+                ball.vy = dy * 0.18;
+                ball.isFlying = true;
+                playSound('click');
+            }
+        }
+
+        function autoShootPaperBall() {
+            if (ball.isFlying) return;
+            // Simulated throw with slight randomness
+            ball.vx = 9.5 + (Math.random() * 2 - 1);
+            ball.vy = -11 + (Math.random() * 2 - 1);
+            ball.isFlying = true;
+            playSound('click');
+        }
+
+        function resetBallPosition() {
+            document.getElementById('paperBallOverlayMsg').classList.add('hidden');
+            ball.x = 80;
+            ball.y = 220;
+            ball.vx = 0;
+            ball.vy = 0;
+            ball.isFlying = false;
+            ball.inBin = false;
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Background Classroom Details
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Floor Line
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 265);
+            ctx.lineTo(canvas.width, 265);
+            ctx.stroke();
+
+            // Draw Bin
+            ctx.fillStyle = '#334155';
+            ctx.strokeStyle = '#05D9E8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(bin.x, bin.y, bin.width, bin.height);
+            ctx.fill();
+            ctx.stroke();
+
+            // Bin Rim highlight
+            ctx.fillStyle = '#05D9E8';
+            ctx.fillRect(bin.x - 4, bin.y, bin.width + 8, 6);
+
+            // Bin Text
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '10px Inter';
+            ctx.fillText('RECYCLE', bin.x + 8, bin.y + 40);
+
+            // Draw Aim Trajectory Line
+            if (isAiming) {
+                ctx.strokeStyle = '#00FF66';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(ball.x, ball.y);
+                const dx = aimStart.x - aimCurrent.x;
+                const dy = aimStart.y - aimCurrent.y;
+                ctx.lineTo(ball.x + dx, ball.y + dy);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Update Physics
+            if (ball.isFlying) {
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                ball.vy += gravity;
+
+                // Check goal inside bin
+                if (ball.x > bin.x && ball.x < bin.x + bin.width &&
+                    ball.y > bin.y + 10 && ball.y < bin.y + bin.height && !ball.inBin) {
+                    ball.inBin = true;
+                    ball.isFlying = false;
+                    paperBallGoals++;
+                    playSound('swish');
+                    updatePaperBallUI();
+                    showPaperOverlay("SWISH! GOAL!", "+1 Finger added to bank!", "Throw Again or Cash Out");
+                }
+
+                // Hit floor or out of bounds (Miss)
+                if (ball.y >= 250 || ball.x > canvas.width || ball.x < 0) {
+                    ball.isFlying = false;
+                    playSound('buzzer');
+                    // MISS! Reset score and fail revival!
+                    showPaperOverlay("MISSED THE BIN!", "You missed and lost all accrued points!", "Failed Revival", true);
+                }
+            }
+
+            // Draw Paper Ball (Crumpled appearance)
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Crumple lines
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(-6, -4); ctx.lineTo(4, 6);
+            ctx.moveTo(-2, 6); ctx.lineTo(6, -2);
+            ctx.stroke();
+            ctx.restore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showPaperOverlay(title, body, btnText, isMiss = false) {
+            const overlay = document.getElementById('paperBallOverlayMsg');
+            document.getElementById('paperBallOverlayTitle').textContent = title;
+            document.getElementById('paperBallOverlayBody').textContent = body;
+            const btn = document.getElementById('paperBallOverlayBtn');
+            btn.textContent = btnText;
+
+            if (isMiss) {
+                btn.onclick = failPaperBallRevival;
+                btn.className = "px-6 py-2 bg-savage-red text-white font-bold rounded-xl shadow-lg";
+            } else {
+                btn.onclick = resetBallPosition;
+                btn.className = "px-6 py-2 bg-savage-cyan text-slate-950 font-bold rounded-xl shadow-lg";
+            }
+
+            overlay.classList.remove('hidden');
+        }
+
+        function updatePaperBallUI() {
+            document.getElementById('paperBallGoalCount').textContent = paperBallGoals;
+            document.getElementById('paperBallFingersEarned').textContent = paperBallGoals;
+            document.getElementById('cashOutFingerCount').textContent = paperBallGoals;
+
+            const cashBtn = document.getElementById('cashOutBtn');
+            if (paperBallGoals > 0) {
+                cashBtn.disabled = false;
+                cashBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                cashBtn.disabled = true;
+                cashBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function cashOutPaperBall() {
+            if (!activeRevivalTeamId || paperBallGoals === 0) return;
+            const team = teams.find(t => t.id === activeRevivalTeamId);
+            if (team) {
+                team.fingers = Math.min(10, paperBallGoals);
+                team.eliminated = false;
+            }
+            document.getElementById('paperBallModal').classList.add('hidden');
+            renderTeams();
+            playSound('win');
+        }
+
+        function failPaperBallRevival() {
+            if (!activeRevivalTeamId) return;
+            const team = teams.find(t => t.id === activeRevivalTeamId);
+            if (team) {
+                team.eliminated = true;
+                team.fingers = 0;
+            }
+            document.getElementById('paperBallModal').classList.add('hidden');
+            renderTeams();
+        }
+
+
+        /* ================= OPTION B: SNITCH COURT LOGIC ================= */
+        function startSnitchCourt() {
+            closeRevivalChoice();
+            const team = teams.find(t => t.id === activeRevivalTeamId);
+            document.getElementById('snitchingTeamTitle').textContent = team.name.toUpperCase();
+
+            // Populate opponent dropdown
+            const select = document.getElementById('accusedTeamSelect');
+            select.innerHTML = '';
+            teams.filter(t => t.id !== activeRevivalTeamId && !t.eliminated).forEach(op => {
+                select.innerHTML += `<option value="${op.id}">${op.name} (${op.player})</option>`;
+            });
+
+            document.getElementById('accusedPlayerNameInput').value = '';
+            document.getElementById('snitchCourtModal').classList.remove('hidden');
+        }
+
+        function judgeVerdict(isGuilty) {
+            playSound('gavel');
+            const snitchingTeam = teams.find(t => t.id === activeRevivalTeamId);
+            const accusedTeamId = parseInt(document.getElementById('accusedTeamSelect').value);
+            const accusedTeam = teams.find(t => t.id === accusedTeamId);
+
+            if (isGuilty) {
+                // Snitch proven true!
+                // Snitching team gets 5 fingers restored
+                if (snitchingTeam) {
+                    snitchingTeam.fingers = 5;
+                    snitchingTeam.eliminated = false;
+                }
+                // Accused lying team loses 3 fingers
+                if (accusedTeam) {
+                    accusedTeam.fingers = Math.max(0, accusedTeam.fingers - 3);
+                    if (accusedTeam.fingers === 0) {
+                        // Accused team might hit 0 too
+                        accusedTeam.eliminated = false; // Give them revival chance next
+                    }
+                }
+                playSound('win');
+            } else {
+                // Snitch FAILED! False accusation!
+                if (snitchingTeam) {
+                    snitchingTeam.eliminated = true;
+                    snitchingTeam.fingers = 0;
+                }
+                playSound('buzzer');
+            }
+
+            document.getElementById('snitchCourtModal').classList.add('hidden');
+            renderTeams();
+        }
+
+
+        /* ================= CUSTOM PROMPT & RULES MODALS ================= */
+        function openAddPromptModal() {
+            document.getElementById('addPromptModal').classList.remove('hidden');
+        }
+
+        function closeAddPromptModal() {
+            document.getElementById('addPromptModal').classList.add('hidden');
+            document.getElementById('customPromptInput').value = '';
+        }
+
+        function saveCustomPrompt() {
+            const input = document.getElementById('customPromptInput').value.trim();
+            if (input) {
+                prompts.push(input);
+                currentPromptIndex = prompts.length - 1;
+                renderPrompts();
+                closeAddPromptModal();
+                playSound('click');
+            }
+        }
+
+        function openRulesModal() {
+            document.getElementById('rulesModal').classList.remove('hidden');
+        }
+
+        function closeRulesModal() {
+            document.getElementById('rulesModal').classList.add('hidden');
+        }
+
+        function resetEntireGame() {
+            if (confirm("Reset fingers and restart Never Have I Ever game?")) {
+                teams.forEach(t => {
+                    t.fingers = 10;
+                    t.eliminated = false;
+                    t.revivalsUsed = 0;
+                });
+                currentPromptIndex = 0;
+                renderPrompts();
+                renderTeams();
+                playSound('win');
+            }
+        }
+    </script>
+</body>
+</html>
